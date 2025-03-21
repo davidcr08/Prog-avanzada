@@ -1,0 +1,203 @@
+openapi: 3.0.0
+info:
+  title: API de Usuarios
+  version: 1.0.0
+
+paths:
+  /users:
+    post:
+      summary: Registrar un nuevo usuario
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Correo ya registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{id}/password:
+    patch:
+      summary: Actualizar la contraseña de un usuario
+      operationId: updateUserPassword
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordUpdate'
+      responses:
+        '200':
+          description: Contraseña actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Prohibido (sin permisos suficientes)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    UserRegistration:
+      type: object
+      required:
+        - fullName
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          pattern: "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).*$"
+          description: "Debe contener al menos un dígito, una minúscula y una mayúscula."
+        fullName:
+          type: string
+          maxLength: 100
+        dateBirth:
+          type: string
+          format: date
+          example: "1990-01-01"
+        rol:
+          type: string
+          enum:
+            - user
+            - admin
+          default: user
+
+    PasswordUpdate:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          description: Contraseña actual del usuario
+        newPassword:
+          type: string
+          minLength: 8
+          pattern: "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).*$"
+          description: "Debe contener al menos un dígito, una minúscula y una mayúscula."
+
+    SuccessResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "Contraseña actualizada exitosamente"
+
+    UserResponse:
+      type: object
+      required:
+        - id
+        - email
+        - fullName
+        - rol
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        fullName:
+          type: string
+        dateBirth:
+          type: string
+          format: date
+        rol:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
